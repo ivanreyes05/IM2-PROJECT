@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IM2 PROJECT</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Updated XLSX library version -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div class="box">
+    <div class="form">
+      <h2>WorkSched</h2>
+      <form id="dataForm">
+        <div class="inputbox">
+          <label for="username">Username</label>
+          <input type="text" id="username" required>
+        </div>
+        <div class="inputbox">
+          <label for="email">Email</label>
+          <input type="email" id="email" required>
+        </div>
+        <div class="inputbox">
+          <label for="number">Phone Number</label>
+          <input type="tel" id="number" required>
+        </div>
+        <div class="inputbox">
+          <label for="date">Date</label>
+          <input type="date" id="date" required>
+        </div>
+        <div>
+          <button type="submit" class="sub" id="submit">Submit</button>
+          <button type="button" class="down" id="download">Download</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    // Import the functions you need from the SDKs
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "API_KEY",
+      authDomain: "im2-project-2910d.firebaseapp.com",
+      databaseURL: "https://im2-project-2910d-default-rtdb.firebaseio.com",
+      projectId: "im2-project-2910d",
+      storageBucket: "im2-project-2910d.appspot.com",
+      messagingSenderId: "635251213594",
+      appId: "1:635251213594:web:5312fd0c5d096d727a98a3"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById("submit").addEventListener('click', async function(e) {
+        e.preventDefault();
+
+        const username = document.getElementById("username").value;
+        const email = document.getElementById("email").value;
+        const phoneNumber = document.getElementById("number").value;
+        const date = document.getElementById("date").value;
+
+        try {
+          await set(ref(db, `users/${username}-${Date.now()}`), {
+            username,
+            email,
+            phoneNumber,
+            date
+          });
+          alert("Data saved successfully!");
+        } catch (error) {
+          console.error("Error saving data:", error);
+        }
+      });
+
+      // Download button functionality
+      document.getElementById("download").addEventListener("click", async () => {
+        try {
+          const snapshot = await get(ref(db, 'users'));
+          const membersData = snapshot.val();
+
+          if (membersData) {
+            // Prepare the data for the Excel sheet
+            const ws_data = [['Username', 'Email', 'Phone Number', 'Date']]; // headers
+            for (const key in membersData) {
+              const member = membersData[key];
+              if (member) {
+                ws_data.push([
+                  member.username || 'N/A',
+                  member.email || 'N/A',
+                  member.phoneNumber || 'N/A',
+                  member.date || 'N/A'
+                ]);
+              }
+            }
+
+            // Create a new worksheet and workbook
+            const ws = XLSX.utils.aoa_to_sheet(ws_data); // This method should now work
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Members');
+
+            // Download the file
+            XLSX.writeFile(wb, 'media_team_data.xlsx');
+          } else {
+            alert("No data available");
+          }
+        } catch (error) {
+          console.error("Error fetching data:", error);
+          alert(`An error occurred while fetching data: ${error.message}`);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

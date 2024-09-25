@@ -1,0 +1,66 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
+import * as XLSX from "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC3r97wNXS_Kgvr9jCOK9ZCu_8YQr8Ev0A",
+  authDomain: "fir-project-81a06.firebaseapp.com",
+  projectId: "fir-project-81a06",
+  storageBucket: "fir-project-81a06.appspot.com",
+  messagingSenderId: "592078165458",
+  appId: "1:592078165458:web:4e7e491c2688e9e086e40b"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById("submit").addEventListener('click', async function(e) {
+    e.preventDefault();
+
+    const username = document.getElementById("username").value;
+    const email = document.getElementById("email").value;
+    const phoneNumber = document.getElementById("number").value;
+    const date = document.getElementById("date").value;
+
+    try {
+      // Save to Firebase
+      await set(ref(db, `users/${username}-${Date.now()}`), {
+        username,
+        email,
+        phoneNumber,
+        date
+      });
+      alert("Data saved successfully!");
+
+    } catch (error) {
+      console.error("Error saving data:", error);
+    }
+  });
+
+  // Fetch and download data as Excel
+  document.getElementById("download").addEventListener("click", async () => {
+    try {
+      const snapshot = await get(ref(db, 'users'));
+      const membersData = snapshot.val();
+
+      if (membersData) {
+        const ws_data = [['Username', 'Email', 'Phone Number', 'Date']];
+        for (const key in membersData) {
+          const member = membersData[key];
+          ws_data.push([member.username, member.email, member.phoneNumber, member.date]);
+        }
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+        XLSX.utils.book_append_sheet(wb, ws, 'Members');
+
+        XLSX.writeFile(wb, 'media_team_data.xlsx');
+      } else {
+        alert("No data available");
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  });
+});
